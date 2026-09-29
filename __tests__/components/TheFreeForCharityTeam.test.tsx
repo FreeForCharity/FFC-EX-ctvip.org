@@ -19,7 +19,7 @@ describe('TheFreeForCharityTeam component', () => {
     const { container } = render(<TheFreeForCharityTeam />)
     // One heading per configured member -- the roster size is per-charity
     // content, so it is read from the data rather than pinned to a number.
-    const names = screen.getAllByRole('heading', { level: 3 })
+    const names = screen.queryAllByRole('heading', { level: 3 })
     expect(names).toHaveLength(team.length)
     // No portrait images anywhere in the team section.
     expect(container.querySelectorAll('img')).toHaveLength(0)
@@ -47,6 +47,9 @@ describe('TheFreeForCharityTeam with an empty roster', () => {
   it('renders nothing when the team array is empty', () => {
     jest.isolateModules(() => {
       jest.doMock('@/data/team', () => ({ team: [] }))
+      // An empty roster that is NOT pending means "no team": nothing renders.
+      const config = require('../../src/lib/site.config')
+      config.siteConfig.pending = []
       const EmptyTeam = require('../../src/components/home-page/TheFreeForCharityTeam').default
       const { container } = render(<EmptyTeam />)
       expect(container.firstChild).toBeNull()
@@ -75,7 +78,15 @@ describe('TheFreeForCharityTeam with an empty roster', () => {
 
 describe('TheFreeForCharityTeam with a populated roster', () => {
   it('shows no placeholder when the team is not pending', () => {
-    render(<TheFreeForCharityTeam />)
-    expect(screen.queryByText(PENDING_TEXT)).not.toBeInTheDocument()
+    jest.isolateModules(() => {
+      // A populated roster regardless of this site's own (possibly pending) team.
+      jest.doMock('@/data/team', () => ({ team: [{ name: 'Test Person', role: 'Director' }] }))
+      const config = require('../../src/lib/site.config')
+      config.siteConfig.pending = []
+      const Populated = require('../../src/components/home-page/TheFreeForCharityTeam').default
+      render(<Populated />)
+      expect(screen.getByText('Test Person')).toBeInTheDocument()
+      expect(screen.queryByText(PENDING_TEXT)).not.toBeInTheDocument()
+    })
   })
 })

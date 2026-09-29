@@ -261,11 +261,14 @@ describe('siteConfig.pending contract', () => {
     })
 
     it('rejects a pending field that still carries a value', () => {
-      // The template's own EIN and roster are set, so listing them is a violation.
-      siteConfig.pending = ['ein', 'team']
+      // Values are set here rather than read from this site's config, which may
+      // itself have these fields pending (and so empty).
+      siteConfig.ein = '12-3456789'
+      siteConfig.phone = { display: '(555) 555-0100', tel: '15555550100' }
+      siteConfig.pending = ['ein', 'phone']
       expect(pendingViolations()).toEqual([
         'ein: pending but has a value',
-        'team: pending but has a value',
+        'phone: pending but has a value',
       ])
     })
 

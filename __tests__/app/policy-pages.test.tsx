@@ -68,7 +68,22 @@ describe('Policy page rendering', () => {
   it('Donation Policy renders heading and EIN', () => {
     render(<DonationPolicyPage />)
     expect(screen.getByText('Donation Policy')).toBeInTheDocument()
-    expect(screen.getByText(new RegExp(siteConfig.ein))).toBeInTheDocument()
+    // A pending EIN is empty, and an empty pattern would match every element.
+    if (siteConfig.ein.trim()) {
+      expect(screen.getByText(new RegExp(siteConfig.ein))).toBeInTheDocument()
+    }
+  })
+
+  // A pending (empty) EIN must not leave an empty "(EIN: )" behind.
+  it('Donation Policy omits the EIN clause while the EIN is empty', () => {
+    const original = siteConfig.ein
+    try {
+      siteConfig.ein = ''
+      const { container } = render(<DonationPolicyPage />)
+      expect(container.textContent).not.toContain('EIN:')
+    } finally {
+      siteConfig.ein = original
+    }
   })
 
   // Pins the rendered sentence: this charity's name and EIN, formatted
@@ -77,10 +92,12 @@ describe('Policy page rendering', () => {
   // correctly provisioned pre-501(c)(3) charity does not fail its own CI.
   it('Donation Policy states the EIN in one clean parenthetical', () => {
     const { container } = render(<DonationPolicyPage />)
+    // No EIN clause at all while the EIN is pending (empty).
+    const einClause = siteConfig.ein.trim() ? ` (EIN: ${siteConfig.ein.trim()})` : ''
     expect(container.textContent).toContain(
       siteConfig.taxStatusLabel.trim()
-        ? `${siteConfig.name} is a qualified 501(c)(3) nonprofit organization (EIN: ${siteConfig.ein}).`
-        : `${siteConfig.name} (EIN: ${siteConfig.ein}) has not yet received IRS recognition`
+        ? `${siteConfig.name} is a qualified 501(c)(3) nonprofit organization${einClause}.`
+        : `${siteConfig.name}${einClause} has not yet received IRS recognition`
     )
   })
 

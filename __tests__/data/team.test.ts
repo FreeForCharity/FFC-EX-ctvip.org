@@ -1,15 +1,22 @@
 import { team } from '../../src/data/team'
+import { isPending } from '../../src/lib/site.config'
 
 describe('Team data integrity', () => {
   // The roster is per-charity content, so its SIZE and its NAMES are not
   // asserted -- a rebrand replaces both. What must hold for every fork is that
   // the roster is non-empty (TheFreeForCharityTeam renders an empty-state
   // otherwise, covered in that component's own suite) and well-formed.
-  it('should have at least one team member', () => {
-    expect(team.length).toBeGreaterThan(0)
+  // The one exception: a roster the charity has not supplied yet is empty and
+  // listed in siteConfig.pending (the section then shows a placeholder).
+  it('should have at least one team member unless the team is pending', () => {
+    if (isPending('team')) expect(team).toHaveLength(0)
+    else expect(team.length).toBeGreaterThan(0)
   })
 
-  it.each(team)('team member "$name" should have required fields', (member) => {
+  // it.each rejects an empty table, so a pending (empty) roster skips this.
+  const eachMember = team.length > 0 ? it.each(team) : it.skip.each([{ name: '', role: '' }])
+
+  eachMember('team member "$name" should have required fields', (member) => {
     expect(member.name).toBeDefined()
     expect(typeof member.name).toBe('string')
     expect(member.name.trim().length).toBeGreaterThan(0)
